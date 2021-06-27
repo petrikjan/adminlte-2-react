@@ -9,7 +9,7 @@ import { splitIcon } from '../Utilities';
 class Box extends Component {
   state = {
     // eslint-disable-next-line react/destructuring-assignment
-    collapsed: this.props.collapsed,
+    collapsed: this.props.collapseState !== undefined ? this.props.collapseState : this.props.collapsed,
   }
 
   componentDidMount() {
@@ -136,6 +136,12 @@ class Box extends Component {
         });
       }
       Plugin.call($(this.main));
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.collapseState !== this.props.collapseState) {
+      this.setState({ collapsed: this.props.collapseState });
     }
   }
 
