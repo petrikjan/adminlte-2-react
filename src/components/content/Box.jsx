@@ -1,49 +1,58 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
-import { Types } from '../PropTypes';
-import LoadingSpinner from './LoadingSpinner';
-import { splitIcon } from '../Utilities';
+import { Types } from "../PropTypes";
+import LoadingSpinner from "./LoadingSpinner";
+import { splitIcon } from "../Utilities";
+
+const Event = {
+  collapsed: "collapsed.boxwidget",
+  expanded: "expanded.boxwidget",
+  removed: "removed.boxwidget",
+};
+
+const $ = require("jquery");
+const DataKey = "lte.boxwidget";
+
+const Default = {
+  animationSpeed: 500,
+  collapseTrigger: '[data-widget="collapse"]',
+  removeTrigger: '[data-widget="remove"]',
+};
+
+const Selector = {
+  data: ".box",
+  collapsed: ".collapsed-box",
+  header: ".box-header",
+  body: ".box-body",
+  footer: ".box-footer",
+  tools: ".box-tools",
+};
+
+const ClassName = {
+  collapsed: "collapsed-box",
+};
 
 class Box extends Component {
+  constructor(props) {
+    super(props);
+    this.myRef = React.createRef();
+  }
+
   state = {
     // eslint-disable-next-line react/destructuring-assignment
-    collapsed: this.props.collapseState !== undefined ? this.props.collapseState : this.props.collapsed,
-  }
+    collapsed:
+      this.props.collapseState !== undefined
+        ? this.props.collapseState
+        : this.props.collapsed,
+  };
 
   componentDidMount() {
     {
       const that = this;
       // 'use strict';
       /* eslint-disable-next-line global-require */
-      const $ = require('jquery');
-      const DataKey = 'lte.boxwidget';
-
-      const Default = {
-        animationSpeed: 500,
-        collapseTrigger: '[data-widget="collapse"]',
-        removeTrigger: '[data-widget="remove"]',
-      };
-
-      const Selector = {
-        data: '.box',
-        collapsed: '.collapsed-box',
-        header: '.box-header',
-        body: '.box-body',
-        footer: '.box-footer',
-        tools: '.box-tools',
-      };
-
-      const ClassName = {
-        collapsed: 'collapsed-box',
-      };
-
-      const Event = {
-        collapsed: 'collapsed.boxwidget',
-        expanded: 'expanded.boxwidget',
-        removed: 'removed.boxwidget',
-      };
 
       // BoxWidget Class Definition
       // =====================
@@ -68,7 +77,8 @@ class Box extends Component {
 
         $(this.element).removeClass(ClassName.collapsed);
 
-        $(this.element).children(`${Selector.body}, ${Selector.footer}`)
+        $(this.element)
+          .children(`${Selector.body}, ${Selector.footer}`)
           .slideDown(this.options.animationSpeed, () => {
             $(this.element).trigger(expandedEvent);
             that.setState({ collapsed: false });
@@ -78,7 +88,8 @@ class Box extends Component {
       BoxWidget.prototype.collapse = function collapse() {
         const collapsedEvent = $.Event(Event.collapsed);
 
-        $(this.element).children(`${Selector.body}, ${Selector.footer}`)
+        $(this.element)
+          .children(`${Selector.body}, ${Selector.footer}`)
           .slideUp(this.options.animationSpeed, () => {
             $(this.element).addClass(ClassName.collapsed);
             $(this.element).trigger(collapsedEvent);
@@ -101,17 +112,25 @@ class Box extends Component {
       BoxWidget.prototype._setUpListeners = function _setUpListeners() {
         const that2 = this;
 
-        $(this.element).on('click', this.options.collapseTrigger, function click(event) {
-          if (event) event.preventDefault();
-          that2.toggle($(this));
-          return false;
-        });
+        $(this.element).on(
+          "click",
+          this.options.collapseTrigger,
+          function click(event) {
+            if (event) event.preventDefault();
+            that2.toggle($(this));
+            return false;
+          }
+        );
 
-        $(this.element).on('click', this.options.removeTrigger, function click(event) {
-          if (event) event.preventDefault();
-          that2.remove($(this));
-          return false;
-        });
+        $(this.element).on(
+          "click",
+          this.options.removeTrigger,
+          function click(event) {
+            if (event) event.preventDefault();
+            that2.remove($(this));
+            return false;
+          }
+        );
       };
 
       // Plugin Definition
@@ -123,12 +142,17 @@ class Box extends Component {
           let data = $this.data(DataKey);
 
           if (!data) {
-            const options = $.extend({}, Default, $this.data(), typeof option === 'object' && option);
+            const options = $.extend(
+              {},
+              Default,
+              $this.data(),
+              typeof option === "object" && option
+            );
             $this.data(DataKey, (data = new BoxWidget($this, options)));
           }
 
-          if (typeof option === 'string') {
-            if (typeof data[option] === 'undefined') {
+          if (typeof option === "string") {
+            if (typeof data[option] === "undefined") {
               throw new Error(`No method named ${option}`);
             }
             data[option]();
@@ -141,55 +165,114 @@ class Box extends Component {
 
   componentDidUpdate(prevProps) {
     if (prevProps.collapseState !== this.props.collapseState) {
-      this.setState({ collapsed: this.props.collapseState });
+      const $this = $(this.main);
+      let data = $this.data(DataKey);
+
+      if (prevProps.collapseState) {
+        const collapsedEvent = $.Event(Event.collapsed);
+
+        $(this.main)
+          .children(`${Selector.body}, ${Selector.footer}`)
+          .slideUp(data.options.animationSpeed, () => {
+            $(this.main).addClass(ClassName.collapsed);
+            $(this.main).trigger(collapsedEvent);
+            this.setState({ collapsed: true });
+          });
+      }
+
+      if (!prevProps.collapseState) {
+        const expandedEvent = $.Event(Event.expanded);
+
+        $(this.main)
+          .children(`${Selector.body}, ${Selector.footer}`)
+          .slideDown(data.options.animationSpeed, () => {
+            $(this.main).trigger(expandedEvent);
+            this.setState({ collapsed: false });
+          });
+      }
     }
   }
 
   render() {
     const {
-      type, options, icon, title, titleRight, collapsable, closable, loaded,
-      noPadding, badge, toolIcon, customOptions, className, footerClass,
-      solid, textCenter, padding, bodyClassName, border, style, footer: footerContent,
-      header: headerContent, children, id,
+      type,
+      options,
+      icon,
+      title,
+      titleRight,
+      collapsable,
+      closable,
+      loaded,
+      noPadding,
+      badge,
+      toolIcon,
+      customOptions,
+      className,
+      footerClass,
+      solid,
+      textCenter,
+      padding,
+      bodyClassName,
+      border,
+      style,
+      footer: footerContent,
+      header: headerContent,
+      children,
+      id,
     } = this.props;
     const { collapsed } = this.state;
 
     const localToolIcon = splitIcon(toolIcon);
-    const hasOptions = !!(options);
-    const hasFooter = !!(footerContent);
-    const hasHeaderContent = !!(headerContent);
-    const hasIcon = !!(icon);
+    const hasOptions = !!options;
+    const hasFooter = !!footerContent;
+    const hasHeaderContent = !!headerContent;
+    const hasIcon = !!icon;
     const localIcon = hasIcon ? splitIcon(icon) : null;
-    const hasTitle = title !== ' ';
-    const hasHeader = hasOptions || hasHeaderContent || hasIcon || hasTitle
-      || collapsable || closable || badge || customOptions;
+    const hasTitle = title !== " ";
+    const hasHeader =
+      hasOptions ||
+      hasHeaderContent ||
+      hasIcon ||
+      hasTitle ||
+      collapsable ||
+      closable ||
+      badge ||
+      customOptions;
 
     const joinedClassName = [
-      'box',
-      type ? `box-${type}` : '',
-      className || '',
-      collapsed ? ' collapsed-box' : '',
-      solid ? ' box-solid' : '',
-    ].join(' ');
+      "box",
+      type ? `box-${type}` : "",
+      className || "",
+      collapsed ? " collapsed-box" : "",
+      solid ? " box-solid" : "",
+    ].join(" ");
 
     const bodyClass = [
-      'box-body',
-      noPadding ? 'no-padding' : '',
-      textCenter ? 'text-center' : '',
-      padding ? 'pad' : '',
+      "box-body",
+      noPadding ? "no-padding" : "",
+      textCenter ? "text-center" : "",
+      padding ? "pad" : "",
       bodyClassName,
-    ].filter(p => p).join(' ');
+    ]
+      .filter((p) => p)
+      .join(" ");
 
-    const headerClass = [
-      'box-header',
-      border ? 'with-border' : '',
-    ].filter(p => p).join(' ');
+    const headerClass = ["box-header", border ? "with-border" : ""]
+      .filter((p) => p)
+      .join(" ");
 
     return (
-      <div id={id} ref={(c) => { this.main = c; }} className={joinedClassName} style={style}>
+      <div
+        id={id}
+        ref={(c) => {
+          this.main = c;
+        }}
+        className={joinedClassName}
+        style={style}
+      >
         {hasHeader && (
           <div className={headerClass}>
-            <h3 className={`box-title${titleRight ? ' pull-right' : ''}`}>
+            <h3 className={`box-title${titleRight ? " pull-right" : ""}`}>
               {hasIcon && <FontAwesomeIcon icon={localIcon} />}
               {title && ` ${title}`}
             </h3>
@@ -197,32 +280,46 @@ class Box extends Component {
             <div className="box-tools pull-right">
               {badge}
               {collapsable && (
-                <button type="button" className="btn btn-box-tool" data-widget="collapse">
-                  <FontAwesomeIcon icon={collapsed ? 'plus' : 'minus'} />
+                <button
+                  type="button"
+                  className="btn btn-box-tool"
+                  data-widget="collapse"
+                >
+                  <FontAwesomeIcon icon={collapsed ? "plus" : "minus"} />
                 </button>
               )}
               {customOptions}
               {hasOptions && (
                 <div className="btn-group">
-                  <button type="button" className="btn btn-box-tool dropdown-toggle" data-toggle="dropdown">
+                  <button
+                    type="button"
+                    className="btn btn-box-tool dropdown-toggle"
+                    data-toggle="dropdown"
+                    ref={this.myRef}
+                  >
                     <FontAwesomeIcon icon={localToolIcon} />
-
                   </button>
                   <ul className="dropdown-menu" role="menu">
                     {options}
                   </ul>
                 </div>
               )}
-              {closable && <button type="button" className="btn btn-box-tool" data-widget="remove"><FontAwesomeIcon icon="times" /></button>}
+              {closable && (
+                <button
+                  type="button"
+                  className="btn btn-box-tool"
+                  data-widget="remove"
+                >
+                  <FontAwesomeIcon icon="times" />
+                </button>
+              )}
             </div>
           </div>
         )}
-        <div className={bodyClass}>
-          {children}
-        </div>
+        <div className={bodyClass}>{children}</div>
         {!loaded && <LoadingSpinner />}
         {hasFooter && (
-          <div className={`box-footer${footerClass ? ` ${footerClass}` : ''}`}>
+          <div className={`box-footer${footerClass ? ` ${footerClass}` : ""}`}>
             {footerContent}
           </div>
         )}
@@ -256,9 +353,7 @@ Box.propTypes = {
     PropTypes.node,
   ]),
   toolIcon: PropTypes.string,
-  customOptions: PropTypes.shape({
-
-  }),
+  customOptions: PropTypes.shape({}),
   className: PropTypes.string,
   footerClass: PropTypes.string,
   collapsed: PropTypes.bool,
@@ -267,9 +362,7 @@ Box.propTypes = {
   padding: PropTypes.bool,
   bodyClassName: PropTypes.string,
   border: PropTypes.bool,
-  style: PropTypes.shape({
-
-  }),
+  style: PropTypes.shape({}),
   header: PropTypes.oneOfType([
     PropTypes.arrayOf(PropTypes.node),
     PropTypes.node,
@@ -282,7 +375,7 @@ Box.propTypes = {
 
 Box.defaultProps = {
   id: undefined,
-  title: ' ',
+  title: " ",
   collapsable: false,
   closable: false,
   footer: null,
@@ -293,7 +386,7 @@ Box.defaultProps = {
   loaded: true,
   noPadding: false,
   badge: null,
-  toolIcon: 'fas-wrench',
+  toolIcon: "fas-wrench",
   customOptions: null,
   className: null,
   footerClass: null,
