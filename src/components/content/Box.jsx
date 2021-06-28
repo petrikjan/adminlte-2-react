@@ -168,7 +168,7 @@ class Box extends Component {
       const $this = $(this.main);
       let data = $this.data(DataKey);
 
-      if (prevProps.collapseState) {
+      if (!prevProps.collapseState) {
         const collapsedEvent = $.Event(Event.collapsed);
 
         $(this.main)
@@ -180,7 +180,7 @@ class Box extends Component {
           });
       }
 
-      if (!prevProps.collapseState) {
+      if (prevProps.collapseState) {
         const expandedEvent = $.Event(Event.expanded);
 
         $(this.main)
@@ -208,6 +208,7 @@ class Box extends Component {
       toolIcon,
       customOptions,
       className,
+      headerClass,
       footerClass,
       solid,
       textCenter,
@@ -257,7 +258,11 @@ class Box extends Component {
       .filter((p) => p)
       .join(" ");
 
-    const headerClass = ["box-header", border ? "with-border" : ""]
+    const headerClassComp = [
+      "box-header",
+      border ? "with-border" : "",
+      headerClass ? headerClass : "",
+    ]
       .filter((p) => p)
       .join(" ");
 
@@ -271,7 +276,7 @@ class Box extends Component {
         style={style}
       >
         {hasHeader && (
-          <div className={headerClass}>
+          <div className={headerClassComp}>
             <h3 className={`box-title${titleRight ? " pull-right" : ""}`}>
               {hasIcon && <FontAwesomeIcon icon={localIcon} />}
               {title && ` ${title}`}
